@@ -1,84 +1,77 @@
-// Online C++ compiler to run C++ program online
 #include <iostream>
-#include <bits/stdc++.h>
-#include <algorithm>
+#include <vector>
 using namespace std;
 
-int height, width;
-int n;
-int h[11], w[11];
-int x[11], y[11], shape[11];
-int can_cut;
+const int MAX_W = 100;
+const int MAX_H = 100;
 
-int overlap_2_rec(int top_r1, int top_c1, int btm_r1, int btm_c1,
-                  int top_r2, int top_c2, int btm_r2, int btm_c2) {
-    int top_r = max(top_r1, top_r2);
-    int btm_r = min(btm_r1, btm_r2);
-    int top_c = max(top_c1, top_c2);
-    int btm_c = min(btm_c1, btm_c2);
-    
-    if (top_r > btm_r || top_c > btm_c) return 0;
-    return 1;
-}
+int W, H, n; // W: chi?u r?ng, H: chi?u cao, n: s? h?nh ch? nh?t
+vector<int> w, h; // kích thý?c các h?nh ch? nh?t
+bool mark[MAX_W][MAX_H]; // lý?i ð? ðánh d?u các ô ð? ðý?c s? d?ng
+int x[MAX_W], y[MAX_H], o[MAX_W]; // v? trí và hý?ng c?a các h?nh ch? nh?t
 
-int overlap(int k, int i, int j, int right_shape) {
-    if (k == 0) return 0;
-    
-    int top_r1 = i, top_c1 = j, btm_r1, btm_c1;
-    int top_r2, top_c2, btm_r2, btm_c2;
-
-    if (right_shape) {
-        btm_r1 = top_r1 + h[k] - 1;
-        btm_c1 = top_c1 + w[k] - 1;
-    } else {
-        btm_r1 = top_r1 + w[k] - 1;
-        btm_c1 = top_c1 + h[k] - 1;       
+bool check(int vo, int vx, int vy, int k) {
+    int wk = w[k], hk = h[k];
+    if (vo == 1) {
+        wk = h[k];
+        hk = w[k];
     }
-    
-    for (int rec = 0; rec <= k - 1; rec++) {
-        top_r2 = x[rec]; top_c2 = y[rec];
-    
-        if (shape[rec]) {
-            btm_r2 = top_r2 + h[rec] - 1;
-            btm_c2 = top_c2 + w[rec] - 1;
-        } else {
-            btm_r2 = top_r2 + w[rec] - 1;
-            btm_c2 = top_c2 + h[rec] - 1;      
-        }    
-        
-        if (overlap_2_rec(top_r1, top_c1, btm_r1, btm_c1,
-                          top_r2, top_c2, btm_r2, btm_c2)) {
-            return 1;
+    if (vx + wk > W || vy + hk > H) return false;
+
+    for (int i = vx; i < vx + wk; i++) {
+        for (int j = vy; j < vy + hk; j++) {
+            if (mark[i][j]) return false;
         }
     }
-    return 0;
+    return true;
 }
 
-// void printSol() {
-//     for (int i = 0; i < n) 
-// }   
+void doMark(int vo, int vx, int vy, int k, bool mark_value) {
+    int wk = w[k], hk = h[k];
+    if (vo == 1) {
+        wk = h[k];
+        hk = w[k];
+    }
+
+    for (int i = vx; i < vx + wk; i++) {
+        for (int j = vy; j < vy + hk; j++) {
+            mark[i][j] = mark_value;
+        }
+    }
+}
+
+void solution() {
+    cout << "Solution found:\n";
+    for (int i = 0; i < n; i++) {
+        cout << "Rectangle " << i + 1 << ": x = " << x[i] << ", y = " << y[i]
+            << ", orientation = " << o[i] << "\n";
+    }
+    exit(0); // K?t thúc chýõng tr?nh n?u t?m th?y l?i gi?i
+}
 
 void Try(int k) {
-    int hk, wk;
-
-    for (int right_shape = 0; right_shape <= 1; right_shape++) {
-        if (!right_shape) {
-            hk = w[k]; wk = h[k];
-        } else {
-            hk = h[k]; wk = w[k];
+    for (int vo = 0; vo <= 1; vo++) {
+        int wk = w[k], hk = h[k];
+        if (vo == 1) {
+            wk = h[k];
+            hk = w[k];
         }
-        
-        for (int i = 1; i <= height - hk + 1; i++) {
-            for (int j = 1; j <= width - wk + 1; j++) {
-                if (!overlap(k, i, j, right_shape)) {
-                    
-                    x[k] = i; y[k] = j;
-                    shape[k] = right_shape; 
-                    
+        for (int vx = 0; vx <= W - wk; vx++) {
+            for (int vy = 0; vy <= H - hk; vy++) {
+                if (check(vo, vx, vy, k)) {
+                    x[k] = vx;
+                    y[k] = vy;
+                    o[k] = vo;
+                    doMark(vo, vx, vy, k, true); // Ðánh d?u
+
                     if (k == n - 1) {
-                        can_cut = 1;
-                        return;
-                    } else Try(k + 1);
+                        solution();
+                    }
+                    else {
+                        Try(k + 1);
+                    }
+
+                    doMark(vo, vx, vy, k, false); // B? ðánh d?u
                 }
             }
         }
@@ -86,20 +79,24 @@ void Try(int k) {
 }
 
 int main() {
-    ios_base::sync_with_stdio(0);
-    cin.tie(0); cout.tie(0);    
-    
-    // x[0] = 1; y[0] = 1; shape[0] = 0;
-    // x[1] = 2; y[1] = 4; shape[1] = 0;
-    
-    cin >> height >> width;
-    cin >> n;
-    
+    cin >> W >> H >> n;
+    w.resize(n);
+    h.resize(n);
     for (int i = 0; i < n; i++) {
-        cin >> h[i] >> w[i];    
+        cin >> w[i] >> h[i];
     }
-    // cout << overlap(2, 5, 5, 0);
+
+    // Kh?i t?o lý?i ðánh d?u là chýa s? d?ng
+    for (int i = 0; i < W; i++) {
+        for (int j = 0; j < H; j++) {
+            mark[i][j] = false;
+        }
+    }
+
+    // B?t ð?u th? t? h?nh ch? nh?t ð?u tiên
     Try(0);
-    cout << can_cut;
+
+    cout << "No solution found." << endl;
+    return 0;
 }
 
